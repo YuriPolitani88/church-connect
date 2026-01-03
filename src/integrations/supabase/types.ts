@@ -14,7 +14,385 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      check_ins: {
+        Row: {
+          check_in_time: string
+          check_out_time: string | null
+          checked_in_by: string | null
+          checked_out_by: string | null
+          child_id: string
+          classroom_id: string | null
+          id: string
+          notes: string | null
+          qr_code: string | null
+        }
+        Insert: {
+          check_in_time?: string
+          check_out_time?: string | null
+          checked_in_by?: string | null
+          checked_out_by?: string | null
+          child_id: string
+          classroom_id?: string | null
+          id?: string
+          notes?: string | null
+          qr_code?: string | null
+        }
+        Update: {
+          check_in_time?: string
+          check_out_time?: string | null
+          checked_in_by?: string | null
+          checked_out_by?: string | null
+          child_id?: string
+          classroom_id?: string | null
+          id?: string
+          notes?: string | null
+          qr_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_ins_checked_in_by_fkey"
+            columns: ["checked_in_by"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ins_checked_out_by_fkey"
+            columns: ["checked_out_by"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ins_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ins_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      child_guardians: {
+        Row: {
+          child_id: string
+          guardian_id: string
+          id: string
+          is_primary: boolean | null
+        }
+        Insert: {
+          child_id: string
+          guardian_id: string
+          id?: string
+          is_primary?: boolean | null
+        }
+        Update: {
+          child_id?: string
+          guardian_id?: string
+          id?: string
+          is_primary?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_guardians_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "child_guardians_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      children: {
+        Row: {
+          allergies: string[] | null
+          birth_date: string
+          classroom_id: string | null
+          created_at: string
+          dietary_restrictions: string[] | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          is_checked_in: boolean | null
+          medical_notes: string | null
+          medications: string[] | null
+          photo_url: string | null
+          special_needs: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          birth_date: string
+          classroom_id?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          is_checked_in?: boolean | null
+          medical_notes?: string | null
+          medications?: string[] | null
+          photo_url?: string | null
+          special_needs?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string[] | null
+          birth_date?: string
+          classroom_id?: string | null
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          is_checked_in?: boolean | null
+          medical_notes?: string | null
+          medications?: string[] | null
+          photo_url?: string | null
+          special_needs?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "children_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classrooms: {
+        Row: {
+          age_range: string
+          capacity: number
+          created_at: string
+          current_count: number
+          id: string
+          name: string
+          teacher_name: string | null
+        }
+        Insert: {
+          age_range: string
+          capacity?: number
+          created_at?: string
+          current_count?: number
+          id?: string
+          name: string
+          teacher_name?: string | null
+        }
+        Update: {
+          age_range?: string
+          capacity?: number
+          created_at?: string
+          current_count?: number
+          id?: string
+          name?: string
+          teacher_name?: string | null
+        }
+        Relationships: []
+      }
+      event_registrations: {
+        Row: {
+          attendee_email: string | null
+          attendee_name: string
+          attendee_phone: string | null
+          event_id: string
+          guardian_id: string | null
+          id: string
+          notes: string | null
+          registered_at: string
+          status: string | null
+        }
+        Insert: {
+          attendee_email?: string | null
+          attendee_name: string
+          attendee_phone?: string | null
+          event_id: string
+          guardian_id?: string | null
+          id?: string
+          notes?: string | null
+          registered_at?: string
+          status?: string | null
+        }
+        Update: {
+          attendee_email?: string | null
+          attendee_name?: string
+          attendee_phone?: string | null
+          event_id?: string
+          guardian_id?: string | null
+          id?: string
+          notes?: string | null
+          registered_at?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_time: string | null
+          event_date: string
+          event_type: string | null
+          id: string
+          is_recurring: boolean | null
+          location: string | null
+          max_attendees: number | null
+          recurrence_pattern: string | null
+          start_time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_date: string
+          event_type?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          max_attendees?: number | null
+          recurrence_pattern?: string | null
+          start_time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_date?: string
+          event_type?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          max_attendees?: number | null
+          recurrence_pattern?: string | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          is_authorized_pickup: boolean | null
+          phone: string
+          photo_url: string | null
+          relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          is_authorized_pickup?: boolean | null
+          phone: string
+          photo_url?: string | null
+          relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_authorized_pickup?: boolean | null
+          phone?: string
+          photo_url?: string | null
+          relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parent_alerts: {
+        Row: {
+          alert_type: string
+          child_id: string
+          guardian_id: string
+          id: string
+          is_read: boolean | null
+          message: string
+          sent_at: string
+        }
+        Insert: {
+          alert_type: string
+          child_id: string
+          guardian_id: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          sent_at?: string
+        }
+        Update: {
+          alert_type?: string
+          child_id?: string
+          guardian_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_alerts_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_alerts_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
