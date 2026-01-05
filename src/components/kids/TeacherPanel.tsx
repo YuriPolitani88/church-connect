@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { Child, ageGroupLabels } from "@/types/kids";
-import { mockChildren, mockClassRooms, hasAllergies, hasSpecialNeeds, getCheckInForChild } from "@/data/mockKids";
+import { 
+  useChildren, 
+  useClassrooms, 
+  useTodayCheckIns, 
+  hasAllergies, 
+  hasSpecialNeeds, 
+  getCheckInForChild,
+  ChildWithGuardians 
+} from "@/hooks/useKids";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,25 +36,31 @@ import {
   Users,
   CheckCircle2,
   Clock,
-  Send,
+  Loader2,
 } from "lucide-react";
 import SendAlertDialog from "./SendAlertDialog";
 
 const TeacherPanel = () => {
+  const { data: children, isLoading: loadingChildren } = useChildren();
+  const { data: classrooms, isLoading: loadingClassrooms } = useClassrooms();
+  const { data: checkIns, isLoading: loadingCheckIns } = useTodayCheckIns();
+
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [alertChild, setAlertChild] = useState<Child | null>(null);
+  const [alertChild, setAlertChild] = useState<ChildWithGuardians | null>(null);
+
+  const isLoading = loadingChildren || loadingClassrooms || loadingCheckIns;
 
   // Get checked-in children for today
-  const checkedInChildren = mockChildren.filter((child) => {
-    const checkIn = getCheckInForChild(child.id);
+  const checkedInChildren = (children || []).filter((child) => {
+    const checkIn = getCheckInForChild(child.id, checkIns);
     return checkIn !== undefined;
   });
 
   // Filter by room and search
   const filteredChildren = checkedInChildren.filter((child) => {
-    const matchesRoom = selectedRoom === "all" || child.classRoom === selectedRoom;
-    const matchesSearch = child.fullName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRoom = selectedRoom === "all" || child.classroom?.name === selectedRoom;
+    const matchesSearch = child.full_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesRoom && matchesSearch;
   });
 
@@ -57,20 +70,39 @@ const TeacherPanel = () => {
     const bHasAlert = hasAllergies(b) || hasSpecialNeeds(b);
     if (aHasAlert && !bHasAlert) return -1;
     if (!aHasAlert && bHasAlert) return 1;
-    return a.fullName.localeCompare(b.fullName);
+    return a.full_name.localeCompare(b.full_name);
   });
 
   // Stats by room
-  const roomStats = mockClassRooms.map((room) => {
-    const count = checkedInChildren.filter((c) => c.classRoom === room.name).length;
+  const roomStats = (classrooms || []).map((room) => {
+    const count = checkedInChildren.filter((c) => c.classroom?.name === room.name).length;
     const withAllergies = checkedInChildren.filter(
-      (c) => c.classRoom === room.name && hasAllergies(c)
+      (c) => c.classroom?.name === room.name && hasAllergies(c)
     ).length;
     return { ...room, count, withAllergies };
   });
 
   const totalWithAllergies = checkedInChildren.filter(hasAllergies).length;
   const totalWithSpecialNeeds = checkedInChildren.filter(hasSpecialNeeds).length;
+
+  const getAgeGroupLabel = (ageRange: string | undefined) => {
+    if (!ageRange) return "";
+    const labels: Record<string, string> = {
+      "0-1 anos": "Berçário",
+      "1-2 anos": "Maternal",
+      "3-5 anos": "Jardim",
+      "6-10 anos": "Infantil",
+    };
+    return labels[ageRange] || ageRange;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -115,7 +147,7 @@ const TeacherPanel = () => {
               <CheckCircle2 className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockClassRooms.length}</p>
+              <p className="text-2xl font-bold">{classrooms?.length || 0}</p>
               <p className="text-sm text-muted-foreground">Salas Ativas</p>
             </div>
           </CardContent>
@@ -179,7 +211,7 @@ const TeacherPanel = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as salas</SelectItem>
-                  {mockClassRooms.map((room) => (
+                  {classrooms?.map((room) => (
                     <SelectItem key={room.id} value={room.name}>
                       {room.name}
                     </SelectItem>
@@ -202,7 +234,7 @@ const TeacherPanel = () => {
             </TableHeader>
             <TableBody>
               {sortedChildren.map((child) => {
-                const checkIn = getCheckInForChild(child.id);
+                const checkIn = getCheckInForChild(child.id, checkIns);
                 const childHasAllergies = hasAllergies(child);
                 const childHasSpecialNeeds = hasSpecialNeeds(child);
 
@@ -220,38 +252,38 @@ const TeacherPanel = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                          {child.photoUrl ? (
+                          {child.photo_url ? (
                             <img
-                              src={child.photoUrl}
-                              alt={child.fullName}
+                              src={child.photo_url}
+                              alt={child.full_name}
                               className="h-10 w-10 object-cover"
                             />
                           ) : (
                             <span className="text-sm font-medium text-primary">
-                              {child.fullName.charAt(0)}
+                              {child.full_name.charAt(0)}
                             </span>
                           )}
                         </div>
                         <div>
-                          <div className="font-medium">{child.fullName}</div>
+                          <div className="font-medium">{child.full_name}</div>
                           <div className="text-xs text-muted-foreground">
-                            {ageGroupLabels[child.ageGroup]}
+                            {getAgeGroupLabel(child.classroom?.age_range)}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{child.classRoom}</Badge>
+                      <Badge variant="outline">{child.classroom?.name || "Sem sala"}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {childHasAllergies && (
                           <Badge variant="destructive" className="gap-1 text-xs">
                             <AlertTriangle className="h-3 w-3" />
-                            {child.allergies.join(", ")}
+                            {child.allergies?.join(", ")}
                           </Badge>
                         )}
-                        {child.medications.length > 0 && (
+                        {(child.medications?.length ?? 0) > 0 && (
                           <Badge
                             variant="secondary"
                             className="gap-1 text-xs bg-warning/10 text-warning"
@@ -260,7 +292,7 @@ const TeacherPanel = () => {
                             Medicação
                           </Badge>
                         )}
-                        {child.specialNeeds.length > 0 && (
+                        {(child.special_needs?.length ?? 0) > 0 && (
                           <Badge
                             variant="secondary"
                             className="gap-1 text-xs bg-accent/10 text-accent"
@@ -270,8 +302,8 @@ const TeacherPanel = () => {
                           </Badge>
                         )}
                         {!childHasAllergies &&
-                          child.medications.length === 0 &&
-                          child.specialNeeds.length === 0 && (
+                          (child.medications?.length ?? 0) === 0 &&
+                          (child.special_needs?.length ?? 0) === 0 && (
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
                       </div>
@@ -279,7 +311,7 @@ const TeacherPanel = () => {
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {checkIn?.checkInTime || "—"}
+                        {checkIn ? new Date(checkIn.check_in_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

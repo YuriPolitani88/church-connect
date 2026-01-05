@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,42 +17,94 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, AlertTriangle, User } from "lucide-react";
-import { Child, Guardian, ageGroupLabels, relationshipLabels } from "@/types/kids";
-import { mockGuardians } from "@/data/mockKids";
+import { X, Plus, AlertTriangle, User, Loader2 } from "lucide-react";
+import { ChildWithGuardians, DbGuardian, useGuardians, useClassrooms, useCreateChild, useUpdateChild } from "@/hooks/useKids";
 import { useToast } from "@/hooks/use-toast";
+
+const relationshipLabels: Record<string, string> = {
+  father: "Pai",
+  mother: "Mãe",
+  parent: "Responsável",
+  guardian: "Responsável Legal",
+  grandparent: "Avô/Avó",
+  other: "Outro",
+};
 
 interface ChildFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  child?: Child;
+  child?: ChildWithGuardians;
 }
 
 const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) => {
   const { toast } = useToast();
+  const { data: guardians, isLoading: loadingGuardians } = useGuardians();
+  const { data: classrooms, isLoading: loadingClassrooms } = useClassrooms();
+  const createChild = useCreateChild();
+  const updateChild = useUpdateChild();
+  
   const isEditing = !!child;
 
   const [formData, setFormData] = useState({
-    fullName: child?.fullName || "",
-    birthDate: child?.birthDate || "",
-    ageGroup: child?.ageGroup || "preschool" as Child["ageGroup"],
-    classRoom: child?.classRoom || "",
-    emergencyNotes: child?.emergencyNotes || "",
+    full_name: "",
+    birth_date: "",
+    classroom_id: "",
+    gender: "",
+    emergency_contact: "",
+    emergency_phone: "",
+    medical_notes: "",
   });
 
-  const [allergies, setAllergies] = useState<string[]>(child?.allergies || []);
+  const [allergies, setAllergies] = useState<string[]>([]);
   const [newAllergy, setNewAllergy] = useState("");
   
-  const [medications, setMedications] = useState<string[]>(child?.medications || []);
+  const [medications, setMedications] = useState<string[]>([]);
   const [newMedication, setNewMedication] = useState("");
   
-  const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>(child?.dietaryRestrictions || []);
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [newDietary, setNewDietary] = useState("");
   
-  const [specialNeeds, setSpecialNeeds] = useState<string[]>(child?.specialNeeds || []);
+  const [specialNeeds, setSpecialNeeds] = useState<string[]>([]);
   const [newSpecialNeed, setNewSpecialNeed] = useState("");
 
-  const [selectedGuardians, setSelectedGuardians] = useState<Guardian[]>(child?.guardians || []);
+  const [selectedGuardianIds, setSelectedGuardianIds] = useState<string[]>([]);
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      if (child) {
+        setFormData({
+          full_name: child.full_name,
+          birth_date: child.birth_date,
+          classroom_id: child.classroom_id || "",
+          gender: child.gender || "",
+          emergency_contact: child.emergency_contact || "",
+          emergency_phone: child.emergency_phone || "",
+          medical_notes: child.medical_notes || "",
+        });
+        setAllergies(child.allergies || []);
+        setMedications(child.medications || []);
+        setDietaryRestrictions(child.dietary_restrictions || []);
+        setSpecialNeeds(child.special_needs || []);
+        setSelectedGuardianIds(child.guardians.map(g => g.id));
+      } else {
+        setFormData({
+          full_name: "",
+          birth_date: "",
+          classroom_id: "",
+          gender: "",
+          emergency_contact: "",
+          emergency_phone: "",
+          medical_notes: "",
+        });
+        setAllergies([]);
+        setMedications([]);
+        setDietaryRestrictions([]);
+        setSpecialNeeds([]);
+        setSelectedGuardianIds([]);
+      }
+    }
+  }, [open, child]);
 
   const addToList = (
     list: string[],
@@ -70,10 +122,10 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
     setList(list.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (selectedGuardians.length === 0) {
+    if (selectedGuardianIds.length === 0) {
       toast({
         title: "Responsável obrigatório",
         description: "Adicione pelo menos um responsável à criança.",
@@ -82,20 +134,60 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
       return;
     }
 
-    toast({
-      title: isEditing ? "Criança atualizada" : "Criança cadastrada",
-      description: `${formData.fullName} foi ${isEditing ? "atualizado" : "cadastrado"} com sucesso.`,
-    });
-    onOpenChange(false);
-  };
+    try {
+      const childData = {
+        full_name: formData.full_name,
+        birth_date: formData.birth_date,
+        classroom_id: formData.classroom_id || null,
+        gender: formData.gender || null,
+        emergency_contact: formData.emergency_contact || null,
+        emergency_phone: formData.emergency_phone || null,
+        medical_notes: formData.medical_notes || null,
+        allergies,
+        medications,
+        dietary_restrictions: dietaryRestrictions,
+        special_needs: specialNeeds,
+      };
 
-  const toggleGuardian = (guardian: Guardian) => {
-    if (selectedGuardians.find((g) => g.id === guardian.id)) {
-      setSelectedGuardians(selectedGuardians.filter((g) => g.id !== guardian.id));
-    } else {
-      setSelectedGuardians([...selectedGuardians, guardian]);
+      if (isEditing && child) {
+        await updateChild.mutateAsync({
+          id: child.id,
+          child: childData,
+          guardianIds: selectedGuardianIds,
+        });
+        toast({
+          title: "Criança atualizada",
+          description: `${formData.full_name} foi atualizado com sucesso.`,
+        });
+      } else {
+        await createChild.mutateAsync({
+          child: childData,
+          guardianIds: selectedGuardianIds,
+        });
+        toast({
+          title: "Criança cadastrada",
+          description: `${formData.full_name} foi cadastrado com sucesso.`,
+        });
+      }
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar criança. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
+
+  const toggleGuardian = (guardianId: string) => {
+    if (selectedGuardianIds.includes(guardianId)) {
+      setSelectedGuardianIds(selectedGuardianIds.filter((id) => id !== guardianId));
+    } else {
+      setSelectedGuardianIds([...selectedGuardianIds, guardianId]);
+    }
+  };
+
+  const isLoading = createChild.isPending || updateChild.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,51 +202,77 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo *</Label>
+              <Label htmlFor="full_name">Nome Completo *</Label>
               <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Data de Nascimento *</Label>
+              <Label htmlFor="birth_date">Data de Nascimento *</Label>
               <Input
-                id="birthDate"
+                id="birth_date"
                 type="date"
-                value={formData.birthDate}
-                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                value={formData.birth_date}
+                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ageGroup">Faixa Etária *</Label>
+              <Label htmlFor="gender">Gênero</Label>
               <Select
-                value={formData.ageGroup}
-                onValueChange={(value: Child["ageGroup"]) =>
-                  setFormData({ ...formData, ageGroup: value })
-                }
+                value={formData.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(ageGroupLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
+                  <SelectItem value="male">Masculino</SelectItem>
+                  <SelectItem value="female">Feminino</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="classroom_id">Sala *</Label>
+              <Select
+                value={formData.classroom_id}
+                onValueChange={(value) => setFormData({ ...formData, classroom_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingClassrooms ? "Carregando..." : "Selecione a sala"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {classrooms?.map((classroom) => (
+                    <SelectItem key={classroom.id} value={classroom.id}>
+                      {classroom.name} ({classroom.age_range})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Emergency Contact */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="classRoom">Sala *</Label>
+              <Label htmlFor="emergency_contact">Contato de Emergência</Label>
               <Input
-                id="classRoom"
-                value={formData.classRoom}
-                onChange={(e) => setFormData({ ...formData, classRoom: e.target.value })}
-                required
+                id="emergency_contact"
+                value={formData.emergency_contact}
+                onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
+                placeholder="Nome do contato"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergency_phone">Telefone de Emergência</Label>
+              <Input
+                id="emergency_phone"
+                value={formData.emergency_phone}
+                onChange={(e) => setFormData({ ...formData, emergency_phone: e.target.value })}
+                placeholder="+55 11 99999-9999"
               />
             </div>
           </div>
@@ -165,21 +283,28 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
               <User className="h-4 w-4" />
               Responsáveis *
             </Label>
-            <div className="flex flex-wrap gap-2">
-              {mockGuardians.map((guardian) => (
-                <Badge
-                  key={guardian.id}
-                  variant={selectedGuardians.find((g) => g.id === guardian.id) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleGuardian(guardian)}
-                >
-                  {guardian.name} ({relationshipLabels[guardian.relationship]})
-                </Badge>
-              ))}
-            </div>
-            {selectedGuardians.length > 0 && (
+            {loadingGuardians ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando responsáveis...
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {guardians?.map((guardian) => (
+                  <Badge
+                    key={guardian.id}
+                    variant={selectedGuardianIds.includes(guardian.id) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleGuardian(guardian.id)}
+                  >
+                    {guardian.full_name} ({relationshipLabels[guardian.relationship || "parent"] || guardian.relationship})
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {selectedGuardianIds.length > 0 && (
               <div className="text-sm text-muted-foreground">
-                Selecionados: {selectedGuardians.map((g) => g.name).join(", ")}
+                Selecionados: {guardians?.filter(g => selectedGuardianIds.includes(g.id)).map((g) => g.full_name).join(", ")}
               </div>
             )}
           </div>
@@ -335,23 +460,24 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
             </div>
           </div>
 
-          {/* Emergency Notes */}
+          {/* Medical Notes */}
           <div className="space-y-2">
-            <Label htmlFor="emergencyNotes">Observações de Emergência</Label>
+            <Label htmlFor="medical_notes">Observações Médicas/Emergência</Label>
             <Textarea
-              id="emergencyNotes"
-              value={formData.emergencyNotes}
-              onChange={(e) => setFormData({ ...formData, emergencyNotes: e.target.value })}
+              id="medical_notes"
+              value={formData.medical_notes}
+              onChange={(e) => setFormData({ ...formData, medical_notes: e.target.value })}
               placeholder="Instruções importantes para situações de emergência..."
               rows={3}
             />
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isEditing ? "Salvar Alterações" : "Cadastrar Criança"}
             </Button>
           </div>
