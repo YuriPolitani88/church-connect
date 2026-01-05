@@ -11,24 +11,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { Bell, AlertTriangle, Heart, Phone, Send } from "lucide-react";
-import { Child, ParentAlert, alertTypeLabels } from "@/types/kids";
+import { Bell, AlertTriangle, Heart, Phone, Send, Loader2 } from "lucide-react";
+import { ChildWithGuardians, useCreateAlert } from "@/hooks/useKids";
 import { useToast } from "@/hooks/use-toast";
 
 interface SendAlertDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  child: Child;
+  child: ChildWithGuardians;
 }
 
-const alertTypes: { value: ParentAlert["type"]; icon: React.ReactNode; color: string }[] = [
+const alertTypeLabels: Record<string, string> = {
+  pickup_request: "Pedido de Busca",
+  health_issue: "Problema de Saúde",
+  urgent: "Urgente",
+  general: "Geral",
+};
+
+const alertTypes: { value: string; icon: React.ReactNode; color: string }[] = [
   { value: "pickup_request", icon: <Phone className="h-4 w-4" />, color: "bg-primary/10 text-primary" },
   { value: "health_issue", icon: <Heart className="h-4 w-4" />, color: "bg-warning/10 text-warning" },
   { value: "urgent", icon: <AlertTriangle className="h-4 w-4" />, color: "bg-destructive/10 text-destructive" },
   { value: "general", icon: <Bell className="h-4 w-4" />, color: "bg-muted text-muted-foreground" },
 ];
 
-const quickMessages: Record<ParentAlert["type"], string[]> = {
+const quickMessages: Record<string, string[]> = {
   pickup_request: [
     "Por favor, venha buscar {nome} assim que possível.",
     "{nome} está pedindo pelos pais.",
@@ -52,15 +59,17 @@ const quickMessages: Record<ParentAlert["type"], string[]> = {
 
 const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) => {
   const { toast } = useToast();
-  const [alertType, setAlertType] = useState<ParentAlert["type"]>("general");
+  const createAlert = useCreateAlert();
+  const [alertType, setAlertType] = useState<string>("general");
   const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
+
+  const firstName = child.full_name.split(" ")[0];
 
   const handleQuickMessage = (msg: string) => {
-    setMessage(msg.replace("{nome}", child.fullName.split(" ")[0]));
+    setMessage(msg.replace("{nome}", firstName));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!message.trim()) {
       toast({
         title: "Mensagem obrigatória",
@@ -70,17 +79,41 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
       return;
     }
 
-    setIsSending(true);
-    setTimeout(() => {
+    if (child.guardians.length === 0) {
+      toast({
+        title: "Sem responsáveis",
+        description: "Esta criança não tem responsáveis cadastrados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Send alert to all guardians
+      for (const guardian of child.guardians) {
+        await createAlert.mutateAsync({
+          child_id: child.id,
+          guardian_id: guardian.id,
+          alert_type: alertType,
+          message: message.trim(),
+        });
+      }
+
       toast({
         title: "Alerta enviado!",
-        description: `Notificação enviada para os responsáveis de ${child.fullName}.`,
+        description: `Notificação enviada para os responsáveis de ${child.full_name}.`,
       });
-      setIsSending(false);
+      
       onOpenChange(false);
       setMessage("");
       setAlertType("general");
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao enviar alerta. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -92,7 +125,7 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
             Enviar Alerta para os Pais
           </DialogTitle>
           <DialogDescription>
-            Envie uma notificação para os responsáveis de {child.fullName}
+            Envie uma notificação para os responsáveis de {child.full_name}
           </DialogDescription>
         </DialogHeader>
 
@@ -100,16 +133,16 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
           {/* Child Info */}
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {child.photoUrl ? (
-                <img src={child.photoUrl} alt={child.fullName} className="h-12 w-12 object-cover" />
+              {child.photo_url ? (
+                <img src={child.photo_url} alt={child.full_name} className="h-12 w-12 object-cover" />
               ) : (
-                <span className="font-medium text-primary">{child.fullName.charAt(0)}</span>
+                <span className="font-medium text-primary">{child.full_name.charAt(0)}</span>
               )}
             </div>
             <div>
-              <div className="font-medium">{child.fullName}</div>
+              <div className="font-medium">{child.full_name}</div>
               <div className="text-sm text-muted-foreground">
-                Responsáveis: {child.guardians.map((g) => g.name).join(", ")}
+                Responsáveis: {child.guardians.map((g) => g.full_name).join(", ") || "Nenhum"}
               </div>
             </div>
           </div>
@@ -119,7 +152,7 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
             <Label>Tipo de Alerta</Label>
             <RadioGroup
               value={alertType}
-              onValueChange={(val) => setAlertType(val as ParentAlert["type"])}
+              onValueChange={setAlertType}
               className="grid grid-cols-2 gap-2"
             >
               {alertTypes.map((type) => (
@@ -143,14 +176,14 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
           <div className="space-y-2">
             <Label>Mensagens Rápidas</Label>
             <div className="flex flex-wrap gap-2">
-              {quickMessages[alertType].map((msg, index) => (
+              {quickMessages[alertType]?.map((msg, index) => (
                 <Badge
                   key={index}
                   variant="outline"
                   className="cursor-pointer hover:bg-muted"
                   onClick={() => handleQuickMessage(msg)}
                 >
-                  {msg.replace("{nome}", child.fullName.split(" ")[0]).slice(0, 30)}...
+                  {msg.replace("{nome}", firstName).slice(0, 30)}...
                 </Badge>
               ))}
             </div>
@@ -170,12 +203,15 @@ const SendAlertDialog = ({ open, onOpenChange, child }: SendAlertDialogProps) =>
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={createAlert.isPending}>
               Cancelar
             </Button>
-            <Button onClick={handleSend} disabled={isSending} className="gap-2">
-              {isSending ? (
-                "Enviando..."
+            <Button onClick={handleSend} disabled={createAlert.isPending} className="gap-2">
+              {createAlert.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />

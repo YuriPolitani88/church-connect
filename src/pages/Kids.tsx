@@ -20,44 +20,73 @@ import {
   Users,
   AlertTriangle,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
-import { mockChildren, mockCheckIns, hasAllergies } from "@/data/mockKids";
-import { ageGroupLabels, Child } from "@/types/kids";
+import { 
+  useChildren, 
+  useTodayCheckIns, 
+  useClassrooms,
+  hasAllergies, 
+  getCheckInForChild,
+  ChildWithGuardians,
+  CheckInWithRelations
+} from "@/hooks/useKids";
 import ChildCard from "@/components/kids/ChildCard";
 import ChildFormDialog from "@/components/kids/ChildFormDialog";
 import CheckInDialog from "@/components/kids/CheckInDialog";
 import TeacherPanel from "@/components/kids/TeacherPanel";
 
+const ageGroupLabels: Record<string, string> = {
+  "0-1 anos": "Berçário (0-1 ano)",
+  "1-2 anos": "Maternal (1-2 anos)",
+  "3-5 anos": "Jardim (3-5 anos)",
+  "6-10 anos": "Infantil (6-10 anos)",
+};
+
 const Kids = () => {
+  const { data: children, isLoading: loadingChildren } = useChildren();
+  const { data: checkIns, isLoading: loadingCheckIns } = useTodayCheckIns();
+  const { data: classrooms } = useClassrooms();
+
   const [activeTab, setActiveTab] = useState("children");
   const [searchQuery, setSearchQuery] = useState("");
   const [ageFilter, setAgeFilter] = useState<string>("all");
   const [showChildForm, setShowChildForm] = useState(false);
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [selectedChild, setSelectedChild] = useState<ChildWithGuardians | null>(null);
   const [checkInMode, setCheckInMode] = useState<"checkin" | "checkout" | null>(null);
+  const [currentCheckIn, setCurrentCheckIn] = useState<CheckInWithRelations | undefined>();
+
+  const isLoading = loadingChildren || loadingCheckIns;
 
   // Stats
-  const today = new Date().toISOString().split("T")[0];
-  const todayCheckIns = mockCheckIns.filter(
-    (ci) => ci.date === today && ci.status === "checked_in"
-  );
-  const childrenWithAllergies = mockChildren.filter(hasAllergies);
+  const todayCheckIns = checkIns?.filter((ci) => !ci.check_out_time) || [];
+  const childrenWithAllergies = (children || []).filter(hasAllergies);
 
   // Filter children
-  const filteredChildren = mockChildren.filter((child) => {
-    const matchesSearch = child.fullName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesAge = ageFilter === "all" || child.ageGroup === ageFilter;
+  const filteredChildren = (children || []).filter((child) => {
+    const matchesSearch = child.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesAge = ageFilter === "all" || child.classroom?.age_range === ageFilter;
     return matchesSearch && matchesAge;
   });
 
-  const handleCheckIn = (child: Child) => {
+  const handleCheckIn = (child: ChildWithGuardians) => {
     setSelectedChild(child);
     setCheckInMode("checkin");
+    setCurrentCheckIn(undefined);
   };
 
-  const handleCheckOut = (child: Child) => {
+  const handleCheckOut = (child: ChildWithGuardians) => {
+    const checkIn = getCheckInForChild(child.id, checkIns);
     setSelectedChild(child);
     setCheckInMode("checkout");
+    setCurrentCheckIn(checkIn);
+  };
+
+  const handleCloseChildForm = (open: boolean) => {
+    setShowChildForm(open);
+    if (!open) {
+      setSelectedChild(null);
+    }
   };
 
   return (
@@ -74,7 +103,7 @@ const Kids = () => {
               Gestão completa do ministério infantil
             </p>
           </div>
-          <Button onClick={() => setShowChildForm(true)} className="gap-2">
+          <Button onClick={() => { setSelectedChild(null); setShowChildForm(true); }} className="gap-2">
             <UserPlus className="h-4 w-4" />
             Nova Criança
           </Button>
@@ -88,7 +117,7 @@ const Kids = () => {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockChildren.length}</p>
+                <p className="text-2xl font-bold">{isLoading ? "-" : children?.length || 0}</p>
                 <p className="text-sm text-muted-foreground">Total Crianças</p>
               </div>
             </CardContent>
@@ -99,7 +128,7 @@ const Kids = () => {
                 <CheckCircle2 className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{todayCheckIns.length}</p>
+                <p className="text-2xl font-bold">{isLoading ? "-" : todayCheckIns.length}</p>
                 <p className="text-sm text-muted-foreground">Presentes Hoje</p>
               </div>
             </CardContent>
@@ -110,7 +139,7 @@ const Kids = () => {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{childrenWithAllergies.length}</p>
+                <p className="text-2xl font-bold">{isLoading ? "-" : childrenWithAllergies.length}</p>
                 <p className="text-sm text-muted-foreground">Com Alergias</p>
               </div>
             </CardContent>
@@ -121,8 +150,8 @@ const Kids = () => {
                 <QrCode className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockCheckIns.length}</p>
-                <p className="text-sm text-muted-foreground">Check-ins Semana</p>
+                <p className="text-2xl font-bold">{isLoading ? "-" : checkIns?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Check-ins Hoje</p>
               </div>
             </CardContent>
           </Card>
@@ -172,25 +201,37 @@ const Kids = () => {
               </Select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredChildren.map((child) => (
-                <ChildCard
-                  key={child.id}
-                  child={child}
-                  onCheckIn={() => handleCheckIn(child)}
-                  onCheckOut={() => handleCheckOut(child)}
-                  onViewDetails={() => {
-                    setSelectedChild(child);
-                    setShowChildForm(true);
-                  }}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredChildren.map((child) => {
+                  const checkIn = getCheckInForChild(child.id, checkIns);
+                  return (
+                    <ChildCard
+                      key={child.id}
+                      child={child}
+                      isCheckedIn={!!checkIn}
+                      onCheckIn={() => handleCheckIn(child)}
+                      onCheckOut={() => handleCheckOut(child)}
+                      onViewDetails={() => {
+                        setSelectedChild(child);
+                        setShowChildForm(true);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
 
-            {filteredChildren.length === 0 && (
+            {!isLoading && filteredChildren.length === 0 && (
               <Card>
                 <CardContent className="p-8 text-center text-muted-foreground">
-                  Nenhuma criança encontrada com os filtros aplicados.
+                  {children?.length === 0 
+                    ? "Nenhuma criança cadastrada. Clique em 'Nova Criança' para começar."
+                    : "Nenhuma criança encontrada com os filtros aplicados."}
                 </CardContent>
               </Card>
             )}
@@ -213,16 +254,26 @@ const Kids = () => {
                       Selecione uma criança da lista para realizar check-in ou check-out
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                    {mockChildren.slice(0, 6).map((child) => (
-                      <ChildCard
-                        key={child.id}
-                        child={child}
-                        onCheckIn={() => handleCheckIn(child)}
-                        onCheckOut={() => handleCheckOut(child)}
-                      />
-                    ))}
-                  </div>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                      {(children || []).slice(0, 6).map((child) => {
+                        const checkIn = getCheckInForChild(child.id, checkIns);
+                        return (
+                          <ChildCard
+                            key={child.id}
+                            child={child}
+                            isCheckedIn={!!checkIn}
+                            onCheckIn={() => handleCheckIn(child)}
+                            onCheckOut={() => handleCheckOut(child)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -238,7 +289,7 @@ const Kids = () => {
       {/* Child Form Dialog */}
       <ChildFormDialog
         open={showChildForm}
-        onOpenChange={setShowChildForm}
+        onOpenChange={handleCloseChildForm}
         child={selectedChild || undefined}
       />
 
@@ -250,10 +301,12 @@ const Kids = () => {
             if (!open) {
               setCheckInMode(null);
               setSelectedChild(null);
+              setCurrentCheckIn(undefined);
             }
           }}
           child={selectedChild}
           mode={checkInMode}
+          currentCheckIn={currentCheckIn}
         />
       )}
     </DashboardLayout>
