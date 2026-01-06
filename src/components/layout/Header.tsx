@@ -1,7 +1,23 @@
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthContext } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
+  const { user, signOut, roles } = useAuthContext();
+
+  const getRoleLabel = () => {
+    if (roles.includes('admin')) return 'Administrador';
+    if (roles.includes('teacher')) return 'Professor(a)';
+    return 'Responsável';
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 px-6 backdrop-blur-md">
       {/* Search */}
@@ -34,13 +50,29 @@ export function Header() {
         </button>
 
         {/* User */}
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark" />
-          <div className="hidden md:block">
-            <p className="text-sm font-medium">Pastor João</p>
-            <p className="text-xs text-muted-foreground">Administrador</p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-3 rounded-lg p-1 transition-colors hover:bg-muted">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-semibold">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email?.split('@')[0]}</p>
+                <p className="text-xs text-muted-foreground">{getRoleLabel()}</p>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem className="text-muted-foreground text-xs">
+              {user?.email}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={signOut} className="text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
