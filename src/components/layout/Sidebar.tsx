@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuthContext } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +14,7 @@ import {
   ChevronLeft,
   Bell,
   LogOut,
+  Shield,
 } from "lucide-react";
 
 const navigation = [
@@ -25,10 +27,18 @@ const navigation = [
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
+const adminNavigation = [
+  { name: "Administração", href: "/admin", icon: Shield },
+];
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { isAdmin } = useAuthContext();
 
+  const allNavigation = isAdmin() 
+    ? [...navigation, ...adminNavigation] 
+    : navigation;
   return (
     <aside
       className={cn(
@@ -63,7 +73,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 p-3">
-        {navigation.map((item) => {
+        {allNavigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
             <Link

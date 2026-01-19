@@ -11,6 +11,7 @@ import Members from "./pages/Members";
 import Kids from "./pages/Kids";
 import Events from "./pages/Events";
 import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,14 @@ const App = () => (
               }
             />
             <Route path="/events" element={<Events />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRoles={['admin']}>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
