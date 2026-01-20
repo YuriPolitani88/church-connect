@@ -15,6 +15,7 @@ import {
   Bell,
   LogOut,
   Shield,
+  UserCircle,
 } from "lucide-react";
 
 const navigation = [
@@ -31,14 +32,22 @@ const adminNavigation = [
   { name: "Administração", href: "/admin", icon: Shield },
 ];
 
+const guardianNavigation = [
+  { name: "Portal do Responsável", href: "/guardian", icon: UserCircle },
+];
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { isAdmin } = useAuthContext();
+  const { isAdmin, isGuardian } = useAuthContext();
 
-  const allNavigation = isAdmin() 
-    ? [...navigation, ...adminNavigation] 
-    : navigation;
+  let allNavigation = [...navigation];
+  
+  if (isGuardian() && !isAdmin()) {
+    allNavigation = [...guardianNavigation];
+  } else if (isAdmin()) {
+    allNavigation = [...navigation, ...guardianNavigation, ...adminNavigation];
+  }
   return (
     <aside
       className={cn(

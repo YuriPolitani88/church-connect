@@ -12,6 +12,7 @@ import Kids from "./pages/Kids";
 import Events from "./pages/Events";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import GuardianPortal from "./pages/GuardianPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin']}>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/guardian"
+              element={
+                <ProtectedRoute requiredRoles={['guardian']}>
+                  <GuardianPortal />
                 </ProtectedRoute>
               }
             />
