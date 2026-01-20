@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus, AlertTriangle, User, Loader2 } from "lucide-react";
 import { ChildWithGuardians, DbGuardian, useGuardians, useClassrooms, useCreateChild, useUpdateChild } from "@/hooks/useKids";
 import { useToast } from "@/hooks/use-toast";
+import { PhotoUpload } from "@/components/ui/photo-upload";
 
 const relationshipLabels: Record<string, string> = {
   father: "Pai",
@@ -53,6 +54,7 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
     emergency_contact: "",
     emergency_phone: "",
     medical_notes: "",
+    photo_url: "",
   });
 
   const [allergies, setAllergies] = useState<string[]>([]);
@@ -81,6 +83,7 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
           emergency_contact: child.emergency_contact || "",
           emergency_phone: child.emergency_phone || "",
           medical_notes: child.medical_notes || "",
+          photo_url: child.photo_url || "",
         });
         setAllergies(child.allergies || []);
         setMedications(child.medications || []);
@@ -96,6 +99,7 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
           emergency_contact: "",
           emergency_phone: "",
           medical_notes: "",
+          photo_url: "",
         });
         setAllergies([]);
         setMedications([]);
@@ -143,6 +147,7 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
         emergency_contact: formData.emergency_contact || null,
         emergency_phone: formData.emergency_phone || null,
         medical_notes: formData.medical_notes || null,
+        photo_url: formData.photo_url || null,
         allergies,
         medications,
         dietary_restrictions: dietaryRestrictions,
@@ -199,6 +204,20 @@ const ChildFormDialog = ({ open, onOpenChange, child }: ChildFormDialogProps) =>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Photo Upload */}
+          <div className="flex flex-col items-center gap-3">
+            <Label>Foto da Criança</Label>
+            <PhotoUpload
+              currentPhotoUrl={formData.photo_url}
+              onPhotoUploaded={(url) => setFormData({ ...formData, photo_url: url })}
+              onPhotoRemoved={() => setFormData({ ...formData, photo_url: "" })}
+              folder="children"
+              entityId={child?.id}
+              initials={formData.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2) || "?"}
+              size="lg"
+            />
+          </div>
+
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
