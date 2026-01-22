@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ import {
   useGuardianAlerts,
   useMarkAlertRead 
 } from "@/hooks/useGuardianPortal";
+import { useRealtimeAlerts } from "@/hooks/useRealtimeAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { calculateAge, getAgeGroupFromDate } from "@/hooks/useKids";
 
@@ -60,6 +61,9 @@ export default function GuardianPortal() {
   const { data: checkInHistory, isLoading: historyLoading } = useGuardianCheckInHistory();
   const { data: alerts, isLoading: alertsLoading } = useGuardianAlerts();
   const markAlertRead = useMarkAlertRead();
+
+  // Enable realtime alerts subscription
+  useRealtimeAlerts(guardian?.id);
 
   const unreadAlerts = alerts?.filter((a) => !a.is_read) || [];
   const checkedInChildren = children?.filter((c) => c.is_checked_in) || [];
