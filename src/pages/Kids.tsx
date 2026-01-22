@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  UserRoundPlus,
 } from "lucide-react";
 import { 
   useChildren, 
@@ -35,6 +36,7 @@ import ChildCard from "@/components/kids/ChildCard";
 import ChildFormDialog from "@/components/kids/ChildFormDialog";
 import CheckInDialog from "@/components/kids/CheckInDialog";
 import TeacherPanel from "@/components/kids/TeacherPanel";
+import GuardianFormDialog from "@/components/kids/GuardianFormDialog";
 
 const ageGroupLabels: Record<string, string> = {
   "0-1 anos": "Berçário (0-1 ano)",
@@ -55,6 +57,7 @@ const Kids = () => {
   const [selectedChild, setSelectedChild] = useState<ChildWithGuardians | null>(null);
   const [checkInMode, setCheckInMode] = useState<"checkin" | "checkout" | null>(null);
   const [currentCheckIn, setCurrentCheckIn] = useState<CheckInWithRelations | undefined>();
+  const [showGuardianForm, setShowGuardianForm] = useState(false);
 
   const isLoading = loadingChildren || loadingCheckIns;
 
@@ -103,10 +106,16 @@ const Kids = () => {
               Gestão completa do ministério infantil
             </p>
           </div>
-          <Button onClick={() => { setSelectedChild(null); setShowChildForm(true); }} className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Nova Criança
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowGuardianForm(true)} className="gap-2">
+              <UserRoundPlus className="h-4 w-4" />
+              Novo Responsável
+            </Button>
+            <Button onClick={() => { setSelectedChild(null); setShowChildForm(true); }} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Nova Criança
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -291,6 +300,12 @@ const Kids = () => {
         open={showChildForm}
         onOpenChange={handleCloseChildForm}
         child={selectedChild || undefined}
+      />
+
+      {/* Guardian Form Dialog */}
+      <GuardianFormDialog
+        open={showGuardianForm}
+        onOpenChange={setShowGuardianForm}
       />
 
       {/* Check-in/out Dialog */}
