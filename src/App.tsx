@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Architecture from "./pages/Architecture";
 import Members from "./pages/Members";
 import Kids from "./pages/Kids";
+import Guardians from "./pages/Guardians";
 import Events from "./pages/Events";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -34,9 +35,10 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Kids />
-                </ProtectedRoute>
-              }
+              </ProtectedRoute>
+            }
             />
+            <Route path="/guardians" element={<Guardians />} />
             <Route path="/events" element={<Events />} />
             <Route
               path="/admin"

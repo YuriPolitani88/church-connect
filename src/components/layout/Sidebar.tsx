@@ -22,6 +22,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Membros", href: "/members", icon: Users },
   { name: "Kids", href: "/kids", icon: Baby },
+  { name: "Responsáveis", href: "/guardians", icon: UserCircle },
   { name: "Eventos", href: "/events", icon: Calendar },
   { name: "Cursos", href: "/courses", icon: GraduationCap },
   { name: "Financeiro", href: "/finance", icon: CreditCard },
