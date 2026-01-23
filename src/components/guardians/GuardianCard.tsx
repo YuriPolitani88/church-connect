@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, Mail, Eye, Pencil, Users } from "lucide-react";
+import { Phone, Mail, Eye, Pencil, Users, Link2 } from "lucide-react";
 import { DbGuardian } from "@/hooks/useKids";
 
 const relationshipLabels: Record<string, string> = {
@@ -19,9 +19,10 @@ interface GuardianCardProps {
   childrenCount?: number;
   onView: (guardian: DbGuardian) => void;
   onEdit: (guardian: DbGuardian) => void;
+  onLinkChildren: (guardian: DbGuardian) => void;
 }
 
-export function GuardianCard({ guardian, childrenCount = 0, onView, onEdit }: GuardianCardProps) {
+export function GuardianCard({ guardian, childrenCount = 0, onView, onEdit, onLinkChildren }: GuardianCardProps) {
   const initials = guardian.full_name
     .split(" ")
     .map((n) => n[0])
@@ -74,7 +75,7 @@ export function GuardianCard({ guardian, childrenCount = 0, onView, onEdit }: Gu
               )}
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -92,6 +93,15 @@ export function GuardianCard({ guardian, childrenCount = 0, onView, onEdit }: Gu
               >
                 <Pencil className="h-4 w-4 mr-1" />
                 Editar
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onLinkChildren(guardian)}
+                className="w-full"
+              >
+                <Link2 className="h-4 w-4 mr-1" />
+                Vincular Crianças
               </Button>
             </div>
           </div>
