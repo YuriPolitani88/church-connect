@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { GuardianCard } from "@/components/guardians/GuardianCard";
 import { GuardianDetailDialog } from "@/components/guardians/GuardianDetailDialog";
+import { LinkChildrenDialog } from "@/components/guardians/LinkChildrenDialog";
 import GuardianFormDialog from "@/components/kids/GuardianFormDialog";
 import { useGuardians, useChildren, DbGuardian, DbChild } from "@/hooks/useKids";
 import { Users, UserPlus, Search, Phone, Mail } from "lucide-react";
@@ -36,6 +37,7 @@ const Guardians = () => {
   const [selectedGuardian, setSelectedGuardian] = useState<DbGuardian | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<DbGuardian | undefined>();
 
   // Build guardian -> children mapping
@@ -94,6 +96,11 @@ const Guardians = () => {
   const handleEdit = (guardian: DbGuardian) => {
     setEditingGuardian(guardian);
     setIsFormOpen(true);
+  };
+
+  const handleLinkChildren = (guardian: DbGuardian) => {
+    setSelectedGuardian(guardian);
+    setIsLinkDialogOpen(true);
   };
 
   const handleNewGuardian = () => {
@@ -209,6 +216,7 @@ const Guardians = () => {
                 childrenCount={guardianChildrenMap.get(guardian.id)?.length || 0}
                 onView={handleView}
                 onEdit={handleEdit}
+                onLinkChildren={handleLinkChildren}
               />
             ))}
           </div>
@@ -228,6 +236,18 @@ const Guardians = () => {
         open={isFormOpen}
         onOpenChange={handleCloseForm}
         guardian={editingGuardian}
+      />
+
+      {/* Link Children Dialog */}
+      <LinkChildrenDialog
+        open={isLinkDialogOpen}
+        onOpenChange={setIsLinkDialogOpen}
+        guardian={selectedGuardian}
+        currentChildIds={
+          selectedGuardian
+            ? guardianChildrenMap.get(selectedGuardian.id)?.map((c) => c.id) || []
+            : []
+        }
       />
     </DashboardLayout>
   );
