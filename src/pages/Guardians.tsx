@@ -16,7 +16,18 @@ import { GuardianDetailDialog } from "@/components/guardians/GuardianDetailDialo
 import { LinkChildrenDialog } from "@/components/guardians/LinkChildrenDialog";
 import GuardianFormDialog from "@/components/kids/GuardianFormDialog";
 import { useGuardians, useChildren, DbGuardian, DbChild } from "@/hooks/useKids";
-import { Users, UserPlus, Search, Phone, Mail } from "lucide-react";
+import { Users, UserPlus, Search, Phone, Mail, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/exportCsv";
+import { toast } from "sonner";
+
+const relationshipLabels: Record<string, string> = {
+  father: "Pai",
+  mother: "Mãe",
+  parent: "Responsável",
+  guardian: "Responsável Legal",
+  grandparent: "Avô/Avó",
+  other: "Outro",
+};
 
 const relationshipOptions = [
   { value: "all", label: "Todos os Parentescos" },
@@ -108,6 +119,32 @@ const Guardians = () => {
     setIsFormOpen(true);
   };
 
+  const handleExportCsv = () => {
+    if (!filteredGuardians.length) {
+      toast.error("Nenhum responsável para exportar");
+      return;
+    }
+
+    const columns: { key: keyof DbGuardian; label: string }[] = [
+      { key: "full_name", label: "Nome Completo" },
+      { key: "phone", label: "Telefone" },
+      { key: "email", label: "E-mail" },
+      { key: "relationship", label: "Parentesco" },
+      { key: "is_authorized_pickup", label: "Autorizado para Busca" },
+      { key: "created_at", label: "Data de Cadastro" },
+    ];
+
+    const dataToExport = filteredGuardians.map((g) => ({
+      ...g,
+      relationship: relationshipLabels[g.relationship || ""] || g.relationship || "",
+      is_authorized_pickup: g.is_authorized_pickup ? "Sim" : "Não",
+      created_at: new Date(g.created_at).toLocaleDateString("pt-BR"),
+    }));
+
+    exportToCsv(dataToExport as unknown as Record<string, unknown>[], "responsaveis", columns as { key: string; label: string }[]);
+    toast.success("Exportação concluída!");
+  };
+
   const handleCloseForm = (open: boolean) => {
     setIsFormOpen(open);
     if (!open) {
@@ -128,10 +165,16 @@ const Guardians = () => {
               Gerencie os responsáveis cadastrados no sistema
             </p>
           </div>
-          <Button onClick={handleNewGuardian} className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Novo Responsável
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCsv} className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button onClick={handleNewGuardian} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Novo Responsável
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
