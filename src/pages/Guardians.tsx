@@ -14,9 +14,10 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { GuardianCard } from "@/components/guardians/GuardianCard";
 import { GuardianDetailDialog } from "@/components/guardians/GuardianDetailDialog";
 import { LinkChildrenDialog } from "@/components/guardians/LinkChildrenDialog";
+import { ImportGuardiansDialog } from "@/components/guardians/ImportGuardiansDialog";
 import GuardianFormDialog from "@/components/kids/GuardianFormDialog";
 import { useGuardians, useChildren, DbGuardian, DbChild } from "@/hooks/useKids";
-import { Users, UserPlus, Search, Phone, Mail, Download } from "lucide-react";
+import { Users, UserPlus, Search, Phone, Mail, Download, Upload } from "lucide-react";
 import { exportToCsv } from "@/lib/exportCsv";
 import { toast } from "sonner";
 
@@ -49,6 +50,7 @@ const Guardians = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<DbGuardian | undefined>();
 
   // Build guardian -> children mapping
@@ -165,7 +167,11 @@ const Guardians = () => {
               Gerencie os responsáveis cadastrados no sistema
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Importar CSV
+            </Button>
             <Button variant="outline" onClick={handleExportCsv} className="gap-2">
               <Download className="h-4 w-4" />
               Exportar CSV
@@ -279,6 +285,12 @@ const Guardians = () => {
         open={isFormOpen}
         onOpenChange={handleCloseForm}
         guardian={editingGuardian}
+      />
+
+      {/* Import Dialog */}
+      <ImportGuardiansDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
       />
 
       {/* Link Children Dialog */}
