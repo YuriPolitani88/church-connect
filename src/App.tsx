@@ -11,6 +11,7 @@ import Members from "./pages/Members";
 import Kids from "./pages/Kids";
 import Guardians from "./pages/Guardians";
 import Events from "./pages/Events";
+import Courses from "./pages/Courses";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import GuardianPortal from "./pages/GuardianPortal";
@@ -40,6 +41,14 @@ const App = () => (
             />
             <Route path="/guardians" element={<Guardians />} />
             <Route path="/events" element={<Events />} />
+            <Route
+              path="/courses"
+              element={
+                <ProtectedRoute>
+                  <Courses />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin"
               element={
