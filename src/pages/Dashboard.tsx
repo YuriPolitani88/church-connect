@@ -6,7 +6,9 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { BirthdayCard } from "@/components/dashboard/BirthdayCard";
+import { CourseStatsCard } from "@/components/dashboard/CourseStatsCard";
 import { Button } from "@/components/ui/button";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const stats = [
   {
@@ -60,6 +62,8 @@ const stats = [
 ];
 
 export default function Dashboard() {
+  const { data: dashboardStats, isLoading } = useDashboardStats();
+
   return (
     <DashboardLayout>
       {/* Page Header */}
@@ -89,6 +93,11 @@ export default function Dashboard() {
             delay={index * 50}
           />
         ))}
+      </div>
+
+      {/* Course Stats */}
+      <div className="mb-8">
+        <CourseStatsCard stats={dashboardStats?.courseStats} loading={isLoading} />
       </div>
 
       {/* Main Content Grid */}
