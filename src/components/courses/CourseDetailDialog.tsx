@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, BookOpen, Users, FileText, ChevronDown, ChevronRight, Calendar } from "lucide-react";
+import { Plus, Trash2, BookOpen, Users, FileText, ChevronDown, ChevronRight, Calendar, ClipboardList, BarChart3 } from "lucide-react";
 import { useCourseModules, useCourseLessons, useCourseEnrollments } from "@/hooks/useCourses";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AttendanceSheet } from "./AttendanceSheet";
+import { AttendanceReport } from "./AttendanceReport";
 import type { Course, CourseModule } from "@/types/courses";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -240,18 +242,26 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
         </DialogHeader>
 
         <Tabs defaultValue="modules" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="modules" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Módulos
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="modules" className="flex items-center gap-1 text-xs">
+              <BookOpen className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Módulos</span>
             </TabsTrigger>
-            <TabsTrigger value="enrollments" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Inscrições
+            <TabsTrigger value="enrollments" className="flex items-center gap-1 text-xs">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Inscrições</span>
             </TabsTrigger>
-            <TabsTrigger value="materials" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Materiais
+            <TabsTrigger value="attendance" className="flex items-center gap-1 text-xs">
+              <ClipboardList className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Chamada</span>
+            </TabsTrigger>
+            <TabsTrigger value="report" className="flex items-center gap-1 text-xs">
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Frequência</span>
+            </TabsTrigger>
+            <TabsTrigger value="materials" className="flex items-center gap-1 text-xs">
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Materiais</span>
             </TabsTrigger>
           </TabsList>
 
@@ -261,6 +271,14 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
 
           <TabsContent value="enrollments" className="mt-4">
             <EnrollmentsTab courseId={course.id} maxParticipants={course.max_participants} />
+          </TabsContent>
+
+          <TabsContent value="attendance" className="mt-4">
+            <AttendanceSheet courseId={course.id} />
+          </TabsContent>
+
+          <TabsContent value="report" className="mt-4">
+            <AttendanceReport courseId={course.id} />
           </TabsContent>
 
           <TabsContent value="materials" className="mt-4">
