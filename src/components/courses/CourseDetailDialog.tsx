@@ -10,6 +10,7 @@ import { useCourseModules, useCourseLessons, useCourseEnrollments } from "@/hook
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AttendanceSheet } from "./AttendanceSheet";
 import { AttendanceReport } from "./AttendanceReport";
+import { MaterialsManager } from "./MaterialsManager";
 import type { Course, CourseModule } from "@/types/courses";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -282,10 +283,7 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
           </TabsContent>
 
           <TabsContent value="materials" className="mt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Gestão de materiais em breve</p>
-            </div>
+            <MaterialsManager courseId={course.id} />
           </TabsContent>
         </Tabs>
       </DialogContent>
