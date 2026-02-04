@@ -15,6 +15,7 @@ import Courses from "./pages/Courses";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import GuardianPortal from "./pages/GuardianPortal";
+import CertificateValidation from "./pages/CertificateValidation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/certificate/:code" element={<CertificateValidation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -210,6 +210,66 @@ export type Database = {
         }
         Relationships: []
       }
+      course_certificates: {
+        Row: {
+          attendance_rate: number
+          attendee_name: string
+          certificate_number: string
+          course_id: string
+          course_title: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          instructor_name: string | null
+          issued_at: string
+          total_hours: number | null
+          validation_code: string
+        }
+        Insert: {
+          attendance_rate: number
+          attendee_name: string
+          certificate_number: string
+          course_id: string
+          course_title: string
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          total_hours?: number | null
+          validation_code: string
+        }
+        Update: {
+          attendance_rate?: number
+          attendee_name?: string
+          certificate_number?: string
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          total_hours?: number | null
+          validation_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_certificates_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "course_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_enrollments: {
         Row: {
           attendee_email: string | null
