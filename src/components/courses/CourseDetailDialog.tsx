@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, BookOpen, Users, FileText, ChevronDown, ChevronRight, Calendar, ClipboardList, BarChart3 } from "lucide-react";
+import { Plus, Trash2, BookOpen, Users, FileText, ChevronDown, ChevronRight, Calendar, ClipboardList, BarChart3, Award } from "lucide-react";
 import { useCourseModules, useCourseLessons, useCourseEnrollments } from "@/hooks/useCourses";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AttendanceSheet } from "./AttendanceSheet";
 import { AttendanceReport } from "./AttendanceReport";
 import { MaterialsManager } from "./MaterialsManager";
+import { CertificatesManager } from "./CertificatesManager";
 import type { Course, CourseModule } from "@/types/courses";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -243,7 +244,7 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
         </DialogHeader>
 
         <Tabs defaultValue="modules" className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="modules" className="flex items-center gap-1 text-xs">
               <BookOpen className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Módulos</span>
@@ -263,6 +264,10 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
             <TabsTrigger value="materials" className="flex items-center gap-1 text-xs">
               <FileText className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Materiais</span>
+            </TabsTrigger>
+            <TabsTrigger value="certificates" className="flex items-center gap-1 text-xs">
+              <Award className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Certificados</span>
             </TabsTrigger>
           </TabsList>
 
@@ -284,6 +289,14 @@ export function CourseDetailDialog({ open, onOpenChange, course }: CourseDetailD
 
           <TabsContent value="materials" className="mt-4">
             <MaterialsManager courseId={course.id} />
+          </TabsContent>
+
+          <TabsContent value="certificates" className="mt-4">
+            <CertificatesManager
+              courseId={course.id}
+              courseTitle={course.title}
+              instructorName={course.instructor_name}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
