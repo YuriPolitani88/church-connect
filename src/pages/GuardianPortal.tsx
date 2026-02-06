@@ -17,8 +17,10 @@ import {
   UtensilsCrossed,
   User,
   Calendar,
-  MapPin
+  MapPin,
+  GraduationCap
 } from "lucide-react";
+import { GuardianCoursesTab } from "@/components/guardian/GuardianCoursesTab";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -175,6 +177,10 @@ export default function GuardianPortal() {
                   {unreadAlerts.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="courses" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Cursos
             </TabsTrigger>
           </TabsList>
 
@@ -398,6 +404,11 @@ export default function GuardianPortal() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Courses Tab */}
+          <TabsContent value="courses" className="space-y-4">
+            <GuardianCoursesTab />
           </TabsContent>
         </Tabs>
       </div>
