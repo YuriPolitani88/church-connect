@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSendEmail } from '@/hooks/useSendEmail';
 
 export interface CourseCertificate {
   id: string;
@@ -30,6 +31,7 @@ function generateValidationCode(): string {
 export function useCourseCertificates(courseId: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { mutateAsync: sendEmail } = useSendEmail();
 
   const certificatesQuery = useQuery({
     queryKey: ['course-certificates', courseId],
@@ -54,6 +56,7 @@ export function useCourseCertificates(courseId: string) {
       instructorName,
       attendanceRate,
       totalHours,
+      attendeeEmail,
     }: {
       enrollmentId: string;
       attendeeName: string;
@@ -61,24 +64,59 @@ export function useCourseCertificates(courseId: string) {
       instructorName?: string;
       attendanceRate: number;
       totalHours?: number;
+      attendeeEmail?: string | null;
     }) => {
+      const validationCode = generateValidationCode();
+      const certificateNumber = generateCertificateNumber();
+
       const { data, error } = await supabase
         .from('course_certificates')
         .insert({
           enrollment_id: enrollmentId,
           course_id: courseId,
-          certificate_number: generateCertificateNumber(),
+          certificate_number: certificateNumber,
           attendee_name: attendeeName,
           course_title: courseTitle,
           instructor_name: instructorName,
           attendance_rate: attendanceRate,
           total_hours: totalHours,
-          validation_code: generateValidationCode(),
+          validation_code: validationCode,
         })
         .select()
         .single();
       
       if (error) throw error;
+
+      // Send email notification if attendee has email
+      if (attendeeEmail) {
+        const validationUrl = `${window.location.origin}/certificate/${validationCode}`;
+        try {
+          await sendEmail({
+            to: attendeeEmail,
+            subject: `Certificado de Conclusão - ${courseTitle}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #1a1a1a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">🎓 Certificado Emitido!</h1>
+                <p>Olá <strong>${attendeeName}</strong>,</p>
+                <p>Parabéns por concluir o curso <strong>${courseTitle}</strong>!</p>
+                <p>Seu certificado foi emitido com os seguintes dados:</p>
+                <ul>
+                  <li><strong>Número:</strong> ${certificateNumber}</li>
+                  <li><strong>Frequência:</strong> ${attendanceRate}%</li>
+                  ${instructorName ? `<li><strong>Instrutor:</strong> ${instructorName}</li>` : ''}
+                </ul>
+                <p>Você pode validar seu certificado acessando o link abaixo:</p>
+                <p><a href="${validationUrl}" style="display: inline-block; background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Validar Certificado</a></p>
+                <p style="color: #666; font-size: 12px; margin-top: 30px;">Este é um e-mail automático. Por favor, não responda.</p>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error('Erro ao enviar e-mail do certificado:', emailError);
+          // Don't fail the certificate issuance if email fails
+        }
+      }
+
       return data;
     },
     onSuccess: () => {

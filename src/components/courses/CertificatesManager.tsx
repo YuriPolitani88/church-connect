@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,23 +37,38 @@ export function CertificatesManager({ courseId, courseTitle, instructorName }: C
   ) ?? [];
 
   const handleIssueCertificate = async (student: typeof eligibleStudents[0]) => {
+    // Fetch enrollee email
+    const { data: enrollment } = await supabase
+      .from('course_enrollments')
+      .select('attendee_email')
+      .eq('id', student.enrollmentId)
+      .single();
+
     await issueCertificate({
       enrollmentId: student.enrollmentId,
       attendeeName: student.attendeeName,
       courseTitle,
       instructorName: instructorName ?? undefined,
       attendanceRate: student.attendanceRate,
+      attendeeEmail: enrollment?.attendee_email,
     });
   };
 
   const handleIssueAll = async () => {
     for (const student of eligibleStudents) {
+      const { data: enrollment } = await supabase
+        .from('course_enrollments')
+        .select('attendee_email')
+        .eq('id', student.enrollmentId)
+        .single();
+
       await issueCertificate({
         enrollmentId: student.enrollmentId,
         attendeeName: student.attendeeName,
         courseTitle,
         instructorName: instructorName ?? undefined,
         attendanceRate: student.attendanceRate,
+        attendeeEmail: enrollment?.attendee_email,
       });
     }
   };
