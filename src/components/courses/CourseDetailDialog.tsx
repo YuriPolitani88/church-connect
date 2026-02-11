@@ -141,8 +141,10 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
   const { enrollments, createEnrollment, deleteEnrollment } = useCourseEnrollments(courseId);
   const [newAttendee, setNewAttendee] = useState({ name: "", email: "", phone: "" });
 
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleAddEnrollment = async () => {
-    if (!newAttendee.name.trim() || !newAttendee.email.trim()) return;
+    if (!newAttendee.name.trim() || !newAttendee.email.trim() || !isValidEmail(newAttendee.email)) return;
     await createEnrollment({
       attendee_name: newAttendee.name,
       attendee_email: newAttendee.email,
@@ -188,7 +190,10 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
                 onChange={(e) => setNewAttendee({ ...newAttendee, phone: e.target.value })}
               />
             </div>
-            <Button onClick={handleAddEnrollment} disabled={!newAttendee.name.trim() || !newAttendee.email.trim()} className="w-full">
+            {newAttendee.email.trim() && !isValidEmail(newAttendee.email) && (
+              <p className="text-xs text-destructive">Formato de e-mail inválido</p>
+            )}
+            <Button onClick={handleAddEnrollment} disabled={!newAttendee.name.trim() || !newAttendee.email.trim() || !isValidEmail(newAttendee.email)} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
               Inscrever
             </Button>
