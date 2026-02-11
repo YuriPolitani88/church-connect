@@ -142,10 +142,10 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
   const [newAttendee, setNewAttendee] = useState({ name: "", email: "", phone: "" });
 
   const handleAddEnrollment = async () => {
-    if (!newAttendee.name.trim()) return;
+    if (!newAttendee.name.trim() || !newAttendee.email.trim()) return;
     await createEnrollment({
       attendee_name: newAttendee.name,
-      attendee_email: newAttendee.email || undefined,
+      attendee_email: newAttendee.email,
       attendee_phone: newAttendee.phone || undefined,
     });
     setNewAttendee({ name: "", email: "", phone: "" });
@@ -176,8 +176,9 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
             />
             <div className="grid grid-cols-2 gap-2">
               <Input
-                placeholder="E-mail"
+                placeholder="E-mail *"
                 type="email"
+                required
                 value={newAttendee.email}
                 onChange={(e) => setNewAttendee({ ...newAttendee, email: e.target.value })}
               />
@@ -187,7 +188,7 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
                 onChange={(e) => setNewAttendee({ ...newAttendee, phone: e.target.value })}
               />
             </div>
-            <Button onClick={handleAddEnrollment} disabled={!newAttendee.name.trim()} className="w-full">
+            <Button onClick={handleAddEnrollment} disabled={!newAttendee.name.trim() || !newAttendee.email.trim()} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
               Inscrever
             </Button>
