@@ -141,6 +141,13 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
   const { enrollments, createEnrollment, deleteEnrollment } = useCourseEnrollments(courseId);
   const [newAttendee, setNewAttendee] = useState({ name: "", email: "", phone: "" });
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleAddEnrollment = async () => {
@@ -185,9 +192,9 @@ function EnrollmentsTab({ courseId, maxParticipants }: { courseId: string; maxPa
                 onChange={(e) => setNewAttendee({ ...newAttendee, email: e.target.value })}
               />
               <Input
-                placeholder="Telefone"
+                placeholder="(00) 00000-0000"
                 value={newAttendee.phone}
-                onChange={(e) => setNewAttendee({ ...newAttendee, phone: e.target.value })}
+                onChange={(e) => setNewAttendee({ ...newAttendee, phone: formatPhone(e.target.value) })}
               />
             </div>
             {newAttendee.email.trim() && !isValidEmail(newAttendee.email) && (
