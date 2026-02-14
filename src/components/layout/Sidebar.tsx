@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import {
   LayoutDashboard,
   Users,
@@ -41,6 +42,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { isAdmin, isGuardian } = useAuthContext();
+  const { logoUrl, churchName } = useSiteSettingsContext();
 
   let allNavigation = [...navigation];
   
@@ -59,12 +61,16 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-glow">
-            <Church className="h-5 w-5 text-primary-foreground" />
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-10 w-10 rounded-xl object-cover" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-glow">
+              <Church className="h-5 w-5 text-primary-foreground" />
+            </div>
+          )}
           {!collapsed && (
             <span className="font-serif text-lg font-semibold text-sidebar-foreground">
-              ChurchCRM
+              {churchName || "ChurchCRM"}
             </span>
           )}
         </Link>

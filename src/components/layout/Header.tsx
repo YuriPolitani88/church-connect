@@ -1,6 +1,7 @@
 import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import {
 
 export function Header() {
   const { user, signOut, roles } = useAuthContext();
+  const { churchName, logoUrl } = useSiteSettingsContext();
 
   const getRoleLabel = () => {
     if (roles.includes('admin')) return 'Administrador';
@@ -42,10 +44,14 @@ export function Header() {
 
         {/* Church Selector */}
         <button className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted">
-          <div className="h-6 w-6 rounded-lg bg-primary/10 p-1">
-            <div className="h-full w-full rounded bg-primary" />
-          </div>
-          <span>Igreja Central</span>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-6 w-6 rounded-lg object-cover" />
+          ) : (
+            <div className="h-6 w-6 rounded-lg bg-primary/10 p-1">
+              <div className="h-full w-full rounded bg-primary" />
+            </div>
+          )}
+          <span>{churchName || "Igreja Central"}</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
 
