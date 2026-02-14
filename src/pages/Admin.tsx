@@ -7,8 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, Loader2 } from 'lucide-react';
+import { Shield, Users, Loader2, Paintbrush } from 'lucide-react';
+import { SiteCustomization } from '@/components/admin/SiteCustomization';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -146,108 +148,127 @@ export default function Admin() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Administração</h1>
-            <p className="text-muted-foreground">Gerencie usuários e permissões</p>
+            <p className="text-muted-foreground">Gerencie usuários, permissões e personalização</p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {(['admin', 'teacher', 'guardian'] as AppRole[]).map(role => (
-            <Card key={role}>
-              <CardHeader className="pb-2">
-                <CardDescription>{roleLabels[role]}s</CardDescription>
-                <CardTitle className="text-3xl">
-                  {users.filter(u => u.role === role).length}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+        <Tabs defaultValue="users">
+          <TabsList>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="customization" className="flex items-center gap-2">
+              <Paintbrush className="h-4 w-4" />
+              Personalização
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Usuários Cadastrados
-            </CardTitle>
-            <CardDescription>
-              Gerencie os papéis de cada usuário do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhum usuário cadastrado.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Papel Atual</TableHead>
-                    <TableHead>Alterar Papel</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.user_id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={u.avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {getInitials(u.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{u.full_name}</p>
-                            {u.user_id === user?.id && (
-                              <span className="text-xs text-muted-foreground">(você)</span>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {u.email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={roleBadgeVariants[u.role]}>
-                          {roleLabels[u.role]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={u.role}
-                          onValueChange={(value) => updateUserRole(u.user_id, value as AppRole)}
-                          disabled={updating === u.user_id || u.user_id === user?.id}
-                        >
-                          <SelectTrigger className="w-[160px]">
-                            {updating === u.user_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <SelectValue />
-                            )}
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="teacher">Professor</SelectItem>
-                            <SelectItem value="guardian">Responsável</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="users" className="mt-4 space-y-4">
+            {/* Stats */}
+            <div className="grid gap-4 md:grid-cols-3">
+              {(['admin', 'teacher', 'guardian'] as AppRole[]).map(role => (
+                <Card key={role}>
+                  <CardHeader className="pb-2">
+                    <CardDescription>{roleLabels[role]}s</CardDescription>
+                    <CardTitle className="text-3xl">
+                      {users.filter(u => u.role === role).length}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+
+            {/* Users Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Usuários Cadastrados
+                </CardTitle>
+                <CardDescription>
+                  Gerencie os papéis de cada usuário do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum usuário cadastrado.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Papel Atual</TableHead>
+                        <TableHead>Alterar Papel</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.user_id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarImage src={u.avatar_url || undefined} />
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  {getInitials(u.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{u.full_name}</p>
+                                {u.user_id === user?.id && (
+                                  <span className="text-xs text-muted-foreground">(você)</span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {u.email}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={roleBadgeVariants[u.role]}>
+                              {roleLabels[u.role]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={u.role}
+                              onValueChange={(value) => updateUserRole(u.user_id, value as AppRole)}
+                              disabled={updating === u.user_id || u.user_id === user?.id}
+                            >
+                              <SelectTrigger className="w-[160px]">
+                                {updating === u.user_id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <SelectValue />
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Administrador</SelectItem>
+                                <SelectItem value="teacher">Professor</SelectItem>
+                                <SelectItem value="guardian">Responsável</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="customization" className="mt-4">
+            <SiteCustomization />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

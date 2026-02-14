@@ -763,6 +763,39 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          label: string
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          label: string
+          setting_key: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
